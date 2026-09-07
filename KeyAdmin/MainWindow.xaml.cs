@@ -24,7 +24,7 @@ namespace KeyAdmin
 
     public partial class MainWindow : Window
     {
-        private readonly string CLE_SECRETE = "ElliottVideoIAPro_SecureKey_2026";
+        private readonly string CLE_SECRETE = CloudManager.CleSecreteUtilisateur;
         public string AdminConnecte { get; set; }
         private string fichierHistorique = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KeyAdminElliott", "historique.csv");
         public ObservableCollection<LicenceGeneree> ListeLicences { get; set; }
