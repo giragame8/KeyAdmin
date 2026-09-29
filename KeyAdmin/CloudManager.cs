@@ -7,19 +7,27 @@ namespace SharedLogic
 {
     public static class CloudManager
     {
-        // Ton script à toi (Master) pour vérifier qui peut ouvrir KeyAdmin
         public static readonly string MasterAppUrl = "https://script.google.com/macros/s/AKfycbxpYvDVOppiqGLMfzan6bIUIyNqBa_XMv79EMrGnxSrqmSCpFPkkBAkXEs_GEttLh4L/exec";
 
-        // Variables dynamiques définies lors de la connexion du client
         public static string UserAppUrl = "";
         public static string CleSecreteUtilisateur = "";
 
-        // --- FONCTIONS MASTER (Vérification KeyAdmin) ---
+        private static string UrlEffective => string.IsNullOrWhiteSpace(UserAppUrl) ? MasterAppUrl : UserAppUrl;
+
+        private static HttpClient ObtenirClientHttp()
+        {
+            var handler = new HttpClientHandler
+            {
+                AllowAutoRedirect = true
+            };
+            return new HttpClient(handler);
+        }
+
         public static async Task<List<string>> GetClientsKeyAdminAutorises()
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                using (HttpClient client = ObtenirClientHttp())
                 {
                     string response = await client.GetStringAsync(MasterAppUrl + "?type=clients_keyadmin");
                     if (string.IsNullOrWhiteSpace(response)) return new List<string>();
@@ -33,7 +41,7 @@ namespace SharedLogic
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                using (HttpClient client = ObtenirClientHttp())
                 {
                     return await client.GetStringAsync(MasterAppUrl + "?type=update_admin");
                 }
@@ -41,15 +49,18 @@ namespace SharedLogic
             catch { return ""; }
         }
 
-        // --- FONCTIONS UTILISATEUR (Gestion de LEUR logiciel) ---
         public static async Task EnvoyerAction(string action, string donnees)
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                using (HttpClient client = ObtenirClientHttp())
                 {
-                    var parametres = new Dictionary<string, string> { { "action", action }, { "data", donnees } };
-                    await client.PostAsync(UserAppUrl, new FormUrlEncodedContent(parametres));
+                    var parametres = new Dictionary<string, string>
+                    {
+                        { "action", action },
+                        { "data", donnees }
+                    };
+                    await client.PostAsync(UrlEffective, new FormUrlEncodedContent(parametres));
                 }
             }
             catch { }
@@ -59,7 +70,7 @@ namespace SharedLogic
         {
             try
             {
-                using (HttpClient client = new HttpClient()) { return await client.GetStringAsync(UserAppUrl + "?type=activations"); }
+                using (HttpClient client = ObtenirClientHttp()) { return await client.GetStringAsync(UrlEffective + "?type=activations"); }
             }
             catch { return ""; }
         }
@@ -68,9 +79,9 @@ namespace SharedLogic
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                using (HttpClient client = ObtenirClientHttp())
                 {
-                    string response = await client.GetStringAsync(UserAppUrl + "?type=admins");
+                    string response = await client.GetStringAsync(UrlEffective + "?type=admins");
                     if (string.IsNullOrWhiteSpace(response)) return new List<string>();
                     return new List<string>(response.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
                 }
@@ -82,9 +93,9 @@ namespace SharedLogic
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                using (HttpClient client = ObtenirClientHttp())
                 {
-                    string blacklist = await client.GetStringAsync(UserAppUrl);
+                    string blacklist = await client.GetStringAsync(UrlEffective);
                     return blacklist.Contains(cle);
                 }
             }
